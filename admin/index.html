@@ -86,7 +86,7 @@
                     Authorization: localStorage.getItem('token')
                 },
                 success: function (backData) {
-                    console.log(backData);
+                    //console.log(backData);
                     if (backData.code == 200) {
                         $('.user_info>img').attr('src', backData.data.userPic);
                         $('.user_info>span>i').text(backData.data.nickname);
@@ -103,7 +103,7 @@
                     window.localStorage.removeItem('token');
                     window.location.href = './login.html';
                 }
-            })
+            });
 
             // $.ajaxSetup({
             //     //发送请求前运行的函数。
@@ -121,6 +121,27 @@
             //         }
             //     }
             // })
+
+            //3.设置右侧多的tab栏的的事件
+            //3.1给右边的div注册点击事件
+            $('.level01 ').on('click',function(){
+                $(this).addClass('active').siblings('div').removeClass('active');
+                //3.2当点击第二个div时显示ul
+                if($(this).index() == 1){
+                    $('.level02').slideToggle();
+                    $(this).find('b').toggleClass('rotate0');
+                    //当点击了第二个div显示ul然后默认点击第一个li标签里的a标签；
+                    //console.log($(this).find('b').toggleClass('rotate0'));
+                    $('.level02>li>a')[0].click(); 
+                }
+            });
+            //4.给ul下面的li标签注册点击事件 添加类和移除类
+            $('ul.level02>li').on('click',function(){
+                $(this).addClass('active').siblings('li').removeClass('active');
+            })
+
+
+
         })
     </script>
 </body>

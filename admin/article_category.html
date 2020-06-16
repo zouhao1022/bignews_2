@@ -51,5 +51,181 @@
             </table>
         </div>
     </div>
+    <!-- 模态框 -->
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="myModalLabel">New message</h4>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <input type="hidden" id="category_id" name="id">
+                        <div class="form-group">
+                            <label for="recipient-name" class="control-label">名称:</label>
+                            <input type="text" class="form-control" id="recipient-name">
+                        </div>
+                        <div class="form-group">
+                            <label for="message-text" class="control-label">slug:</label>
+                            <input type="text" class="form-control" id="message-text">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="clearID" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="addOrEdit">Send message</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="./libs/http.js"></script>
+
+    <script id="category_list" type="text/html">
+        {{each data v}}
+        <tr>
+            <td>{{v.name}}</td>
+            <td>{{v.slug}}</td>
+            <td class="text-center">
+                <a href="javascript:void(0)" data_id="{{v.id}}" data-toggle="modal" data-target="#myModal"
+                    class=" btn btn-info btn-xs">编辑</a>
+                <a href="javascript:void(0)" data_id="{{v.id}}" class="btn btn-danger btn-xs btn_delete">删除</a>
+            </td>
+        </tr>
+        {{/each}}
+    </script>
+    <script>
+        $(function () {
+
+            //1.进入页面发送ajax请求使用模板引擎渲染到页面
+            function getData() {
+                $.ajax({
+                    type: 'get',
+                    url: BigNew.category_list,
+                    success: function (backData) {
+                        //console.log(backData);
+                        if (backData.code == 200) {
+                            var redHtml = template('category_list', backData);
+                            $('tbody').html(redHtml);
+                        }
+                    }
+                });
+            };
+            getData();
+
+
+            //2.用模态框自带的事件 判断新增或者编辑
+            $('#myModal').on('show.bs.modal', function (e) {
+                console.log(e.relatedTarget);
+                //如果时新增分类
+                if (e.relatedTarget === $('#xinzengfenlei')[0]) {
+                    $('#addOrEdit').text('新增');
+                    $('#myModalLabel').text('新增分类')
+                    $('#addOrEdit').addClass('btn-primary').removeClass('btn-success');
+                } else {
+                    $('#category_id').val($(e.relatedTarget).attr('data_id'));
+                    $('#addOrEdit').text('编辑');
+                    $('#myModalLabel').text('编辑分类')
+                    $('#addOrEdit').addClass('btn-success').removeClass('btn-primary');
+                    //内容显示到对应的文本框
+                    var recipient_name = $(e.relatedTarget).parent().prev().prev().text()
+                    var message_text = $(e.relatedTarget).parent().prev().text();
+                    $('#recipient-name').val(recipient_name);
+                    $('#message-text').val(message_text);
+
+                }
+
+            });
+
+            //3.判断点击了新增还是编辑
+            $('#addOrEdit').on('click', function () {
+                if ($('#addOrEdit').text() == '新增') {
+                    console.log('1');
+                    //是新增
+                    var category_name = $('#recipient-name').val().trim();
+                    var category_slug = $('#message-text').val().trim();
+                    $.ajax({
+                        type: 'post',
+                        url: BigNew.category_add,
+                        data: {
+                            name: category_name,
+                            slug: category_slug
+                        },
+                        success: function (backData) {
+                            console.log(backData);
+                            if (backData.code == 201) {
+                                $('#myModal').modal('hide');
+                                $('#recipient-name').val('');
+                                $('#message-text').val('');
+                                getData();
+
+                            }
+                        }
+                    })
+                } else {
+                    //是编辑
+                    var id = $('#category_id').val();
+                    var name = $('#recipient-name').val().trim();
+                    var slug = $('#message-text').val().trim();
+                    $.ajax({
+                        type: 'post',
+                        url: BigNew.category_edit,
+                        data: {
+                            id,
+                            name,
+                            slug
+                        },
+                        success: function (backData) {
+                            console.log(backData);
+                            if (backData.code == 200) {
+                                alert('编辑成功');
+                                $('#myModal').modal('hide');
+                                $('#recipient-name').val('');
+                                $('#message-text').val('');
+                                getData();
+                            }
+                        }
+                    })
+                }
+            });
+
+            //4.清除点击取消按钮后的文本
+            $('#clearID').on('click', function () {
+                //form方法恢复默认  dom元素才有效果
+                $('#myModal form')[0].reset();
+
+            });
+            $('.close').on('click', function () {
+                //form方法恢复默认  dom元素才有效果
+                $('#myModal form')[0].reset();
+
+            });
+
+            //5.删除需求
+            $('tbody').on('click','.btn_delete',function () {
+                var id = $(this).attr('data_id');
+                if (confirm('你确定要删除嘛')) {
+                    $.ajax({
+                        type: 'post',
+                        url: BigNew.category_delete,
+                        data: {
+                            id: id
+                        },
+                        success: function (backData) {
+                            //console.log(backData);
+                            if(backData.code == 204){
+                                alert('删除成功');
+                                getData();
+                            }
+
+                        }
+                    })
+                }
+            })
+
+        })
+    </script>
 
 </html>

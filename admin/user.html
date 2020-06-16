@@ -69,5 +69,77 @@
         </div>
     </div>
 </body>
+<script src="./libs/http.js"></script>
+<script>
+    $(function () {
+
+        //图片预览
+        $('#exampleInputFile').on('change',function(){
+            var file1 = this.files[0];
+            console.log(file1);
+            var url1 = URL.createObjectURL(file1);
+            $('.user_pic').attr('src',url1)
+            
+        })
+
+
+        //1.进入页面提交ajax请求 给页面数据
+        $.ajax({
+            url: BigNew.user_detail,
+            success: function (backData) {
+                //console.log(backData);
+                if (backData.code == 200) {
+                    $('.username').val(backData.data.username);
+                    $('.nickname').val(backData.data.nickname);
+                    $('.email').val(backData.data.email);
+                    $('.password').val(backData.data.password);
+                    $('.user_pic').attr('src', backData.data.userPic)
+                }
+            }
+        });
+
+        //2.给修改按钮注册点击事件
+        $('.btn-edit').on('click', function (e) {
+            e.preventDefault(); //阻止默认跳转
+            var fd = new FormData($('#form')[0]);
+            $.ajax({
+                type: 'post',
+                url: BigNew.user_edit,
+                data: fd,
+                contentType: false,
+                processData: false,
+                success: function (backData) {
+                    console.log(backData);
+                    if (backData.code == 200) {
+                        alert('修改成功');
+                        $.ajax({
+                            url: BigNew.user_info,
+                            //用请求头获取本地储存的token  
+                            headers: {
+                                Authorization: localStorage.getItem('token')
+                            },
+                            success: function (backData) {
+                                //console.log(backData);
+                                if (backData.code == 200) {
+                                    parent.$('.user_info>img').attr('src',
+                                        backData
+                                        .data.userPic);
+                                    parent.$('.user_info>span>i').text(backData
+                                        .data
+                                        .nickname);
+                                    parent.$('.user_center_link>img').attr(
+                                        'src',
+                                        backData.data.userPic);
+                                }
+                            }
+                        })
+
+                    }
+                }
+            })
+        })
+
+    })
+</script>
 
 </html>
