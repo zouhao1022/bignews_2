@@ -13,6 +13,10 @@
     <script src="./libs/jquery-1.12.4.min.js"></script>
     <!-- 引入模板引擎js文件 -->
     <script src="./libs/template-web.js"></script>
+    <!-- bootstrap js文件 -->
+    <script src="./libs/bootstrap/js/bootstrap.min.js"></script>
+    <!-- 页码插件js -->
+    <script src="./libs/jquery.twbsPagination.js"></script>
 </head>
 
 <body>
@@ -69,9 +73,219 @@
                 </tbody>
             </table>
             <div class="row text-center">
+                <ul id="pagination" class="pagination-sm"></ul>
+                <p style="display: none;">没有数据</p>
             </div>
         </div>
     </div>
 </body>
+<script src="./libs/http.js"></script>
+<script id="title_name" type="text/html">
+    <option value="">全部分类</option>
+    {{each data v}}
+    <option value="{{v.id}}">{{v.name}}</option>
+    {{/each}}
+</script>
+<script id="article_list" type="text/html">
+    {{each data.data v}}
+    <tr>
+        <td>{{v.title}}</td>
+        <td>{{v.author}}</td>
+        <td>{{v.category}}</td>
+        <td class="text-center">{{v.date}}</td>
+        <td class="text-center">{{v.state}}</td>
+        <td class="text-center">
+            <a href="article_edit.html" class="btn btn-default btn-xs">编辑</a>
+            <a href="javascript:void(0);" data_id="{{v.id}}" class="btn btn-danger btn-xs delete">删除</a>
+        </td>
+    </tr>
+    {{/each}}
+</script>
+
+<script>
+    $(function () {
+        //1.进入页面渲染下拉菜单里的值
+        $.ajax({
+            type: 'get',
+            url: BigNew.category_list,
+            success: function (backData) {
+                //console.log(backData);
+                if (backData.code == 200) {
+                    var resHtml = template('title_name', backData);
+                    $('#selCategory').html(resHtml);
+                }
+            }
+        });
+        var current = 1;
+
+        function getPage(myPage, fn) {
+            $.ajax({
+                type: 'get',
+                url: BigNew.article_query,
+                data: {
+                    type: $('#selCategory').val().trim(),
+                    state: $('#selStatus').val().trim(),
+                    page: myPage,
+                    perpage: 2
+                },
+                success: function (backData) {
+                    console.log(backData);
+                    if (backData.code == 200) {
+                        var resArticle = template(
+                            'article_list', backData);
+                        $('tbody').html(resArticle);
+                        if (backData.data.data.length != 0 && fn != null) {
+                            $('#pagination').show().next().hide();
+                            fn(backData);
+                        } 
+                        else if (backData.data.data.length == 0 && current == 1) {
+                            $('#pagination').hide().next().show();
+                        } 
+                        else if (backData.data.data.length == 0 && current - 1 == backData.data
+                            .totalPage) {
+                            current--;
+                            $('#pagination').twbsPagination('changeTotalPages',
+                                backData.data.totalPage, current);
+                        }
+                    }
+                }
+            })
+        }
+
+        //2.进入页面根据下拉菜单id获取文章
+        getPage(1, function (backData) {
+            $('#pagination').twbsPagination({
+                totalPages: backData.data.totalPage,
+                visiblePages: 7,
+                first: '首页',
+                prev: '上一页',
+                next: '下一页',
+                last: '尾页',
+                onPageClick: function (event, page) {
+                    //console.log(page);
+                    current = page;
+                    getPage(page, null);
+                }
+            });
+        })
+
+        //3.筛选按钮筛选文章
+        $('#btnSearch').on('click', function (e) {
+            e.preventDefault();
+            current = 1;
+            getPage(1, function (backData) {
+                $('#pagination').twbsPagination('changeTotalPages',
+                    backData.data.totalPage, current);
+            })
+        })
+
+
+        //4.删除功能
+        $('tbody').on('click', 'a.delete', function () {
+            var article_id = $(this).attr('data_id');
+            $.ajax({
+                type: 'post',
+                url: BigNew.article_delete,
+                data: {
+                    id: article_id
+                },
+                success: function (backData) {
+                    if (backData.code == 204) {
+                        alert('删除成功');
+                        getPage(current, function (backData) {
+                            $('#pagination').twbsPagination('changeTotalPages',
+                                backData.data.totalPage, current);
+                        })
+                    }
+                }
+            })
+        })
+
+        //_________________________________________________________
+
+
+
+
+
+
+        //2.进入页面根据下拉菜单id获取文章
+        // $.ajax({
+        //     type: 'get',
+        //     url: BigNew.article_query,
+        //     data: {
+        //         type: $('#selCategory').val().trim(),
+        //         state: $('#selStatus').val().trim(),
+        //         page: 1,
+        //         perpage: 5
+        //     },
+        //     success: function (backData) {
+        //         // console.log(backData);
+        //         if (backData.code == 200) {
+        //             var resArticle = template('article_list', backData);
+        //             $('tbody').html(resArticle);
+        //             //添加页码进去
+        //             $('#pagination').twbsPagination({
+        //                 totalPages: backData.data.totalPage,
+        //                 visiblePages: 7,
+        //                 first: '首页',
+        //                 prev: '上一页',
+        //                 next: '下一页',
+        //                 last: '尾页',
+        //                 onPageClick: function (event, page) {
+        //                     console.log(page);
+        //                     $.ajax({
+        //                         type: 'get',
+        //                         url: BigNew.article_query,
+        //                         data: {
+        //                             type: $('#selCategory').val().trim(),
+        //                             state: $('#selStatus').val().trim(),
+        //                             page: page,
+        //                             perpage: 5
+        //                         },
+        //                         success: function (backData) {
+        //                             console.log(backData);
+        //                             if (backData.code == 200) {
+        //                                 var resArticle = template(
+        //                                     'article_list', backData);
+        //                                 $('tbody').html(resArticle);
+        //                             }
+        //                         }
+        //                     })
+        //                 }
+        //             });
+        //         }
+        //     }
+        // });
+
+
+        // //3.筛选按钮筛选文章
+        // $('#btnSearch').on('click', function (e) {
+        //     e.preventDefault();
+        //     $.ajax({
+        //         type: 'get',
+        //         url: BigNew.article_query,
+        //         data: {
+        //             type: $('#selCategory').val().trim(),
+        //             state: $('#selStatus').val().trim(),
+        //             page: 1,
+        //             perpage: 5
+        //         },
+        //         success: function (backData) {
+        //             console.log(backData);
+        //             if (backData.code == 200) {
+        //                 var resArticle = template('article_list', backData);
+        //                 $('tbody').html(resArticle);
+        //                 $('#pagination').twbsPagination('changeTotalPages',
+        //                     backData.data.totalPage, 1);
+        //             }
+        //         }
+        //     });
+        // });
+
+
+
+
+    })
+</script>
 
 </html>
