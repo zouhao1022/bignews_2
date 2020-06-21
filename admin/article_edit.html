@@ -124,28 +124,30 @@
 
         //4.根据id获取文章信息
         var id = window.location.search.split('=')[1];
-        $.ajax({
-            url: BigNew.article_search,
-            data: {
-                id
-            },
-            success: function (backData) {
-                console.log(backData);
-                if (backData.code == 200) {
-                    $('#inputTitle').val(backData.data.title);
-                    $('.article_cover').attr('src', backData.data.cover);
-                    $('#testico').val(backData.data.date);
-                    $('.category').val(backData.data.categoryId);
-                    editor.txt.html(backData.data.content);
-                }
+        setTimeout(function () {
+            $.ajax({
+                url: BigNew.article_search,
+                data: {
+                    id
+                },
+                success: function (backData) {
+                    console.log(backData);
+                    if (backData.code == 200) {
+                        $('#inputTitle').val(backData.data.title);
+                        $('.article_cover').attr('src', backData.data.cover);
+                        $('#testico').val(backData.data.date);
+                        $('.category').val(backData.data.categoryId);
+                        editor.txt.html(backData.data.content);
+                    }
 
-            }
-        });
+                }
+            });
+        }, 0)
 
         function publish(state) {
             var fd = new FormData($('#form')[0]);
             fd.append('content', editor.txt.html());
-            fd.append('id',id)
+            fd.append('id', id)
             if (state != '') {
                 fd.append('state', '已发布');
             }
@@ -169,8 +171,8 @@
                 }
             })
         }
-        
-        
+
+
         //5,修改按钮
         $('.btn-edit').on('click', function (e) {
             e.preventDefault();
